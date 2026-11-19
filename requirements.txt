@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+openai
+langgraph
+tavily-python
+scikit-learn
+markdown
+xhtml2pdf
+python-dotenv
