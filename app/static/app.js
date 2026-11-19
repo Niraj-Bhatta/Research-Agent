@@ -1,6 +1,4 @@
-/* ============================================================
-   AI Research Assistant – Client-Side Logic
-   ============================================================ */
+
 
 const STEPS = [
   { key: "planning",      label: "Planning research tasks" },
