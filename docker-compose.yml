@@ -1,0 +1,21 @@
+services:
+  research-assistant:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: research_assistant_app
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - ./outputs:/app/outputs
+    extra_hosts:
+      - "host.docker.internal:host-gateway" # allows container to reach local Ollama if configured
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\""]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
