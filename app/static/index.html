@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Research Assistant</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="container">
+    <!-- ───── Header ───── -->
+    <header class="header">
+      <div class="logo">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+          <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+        </svg>
+        <h1>AI Research Assistant</h1>
+      </div>
+      <p class="subtitle">Multi-agent research with live progress &amp; IEEE-formatted reports</p>
+    </header>
+
+    <!-- ───── Input Section ───── -->
+    <section id="input-section" class="card">
+      <label for="topic-input" class="input-label">Research Topic</label>
+      <div class="input-row">
+        <input
+          id="topic-input"
+          type="text"
+          placeholder="e.g. Impact of AI on healthcare"
+          autocomplete="off"
+          spellcheck="false"
+        />
+        <button id="start-btn" onclick="startResearch()">
+          <span class="btn-text">Start Research</span>
+          <svg class="btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"/>
+            <polyline points="12 5 19 12 12 19"/>
+          </svg>
+        </button>
+      </div>
+    </section>
+
+    <!-- ───── Progress Section (hidden until job starts) ───── -->
+    <section id="progress-section" class="card hidden">
+      <h2 class="section-title">Research Progress</h2>
+      <div class="topic-badge" id="topic-badge"></div>
+
+      <div class="pipeline" id="pipeline">
+        <!-- Steps are injected by JS -->
+      </div>
+
+      <div class="status-message" id="status-message"></div>
+    </section>
+
+    <!-- ───── Result Section (hidden until complete) ───── -->
+    <section id="result-section" class="card hidden">
+      <h2 class="section-title">Report Ready</h2>
+      <div class="result-meta" id="result-meta"></div>
+      <div class="download-row">
+        <button class="dl-btn" id="dl-pdf" onclick="downloadReport('pdf')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Download PDF
+        </button>
+        <button class="dl-btn dl-btn-outline" id="dl-md" onclick="downloadReport('md')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+          </svg>
+          Download Markdown
+        </button>
+      </div>
+
+      <!-- Report preview -->
+      <details class="report-preview">
+        <summary>Preview Report</summary>
+        <div class="report-body" id="report-body"></div>
+      </details>
+    </section>
+
+    <!-- ───── Error Section ───── -->
+    <section id="error-section" class="card card-error hidden">
+      <h2 class="section-title">Error</h2>
+      <p id="error-message"></p>
+      <button class="dl-btn" onclick="resetUI()">Try Again</button>
+    </section>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
