@@ -123,6 +123,11 @@ The system is engineered as a collaborative multi-agent collective orchestrated 
                                              └───────────────────┘
 ```
 
+## Project Architecture
+
+![Project Architecture](docs/imagess/Architecture.png)
+
+
 ### Agent Roles & Specifications
 
 1. **Planner Agent (`app/agents/planner.py`)**  
@@ -407,6 +412,12 @@ curl -O -J "http://127.0.0.1:8000/api/research/d1f951d71524/download/md"
 ```
 
 ---
+
+
+### Agent Roles & Specifications
+![Demo 1](docs/imagess/demo_1.png)
+![Demo 2](docs/imagess/demo_2.png)
+
 
 ## 📄 Sample Output & Report Standards
 
