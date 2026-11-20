@@ -125,7 +125,9 @@ The system is engineered as a collaborative multi-agent collective orchestrated 
 
 ## Project Architecture
 
-![Project Architecture](docs/imagess/Architecture.png)
+<p align="center">
+  <img src="docs/images/Architecture.png" width="800" alt="System Architecture">
+</p>
 
 
 ### Agent Roles & Specifications
@@ -414,9 +416,14 @@ curl -O -J "http://127.0.0.1:8000/api/research/d1f951d71524/download/md"
 ---
 
 
-### Agent Roles & Specifications
-![Demo 1](docs/imagess/demo_1.png)
-![Demo 2](docs/imagess/demo_2.png)
+### Demo images of agent work
+<p align="center">
+  <img src="docs/images/demo_1.png" width="800" alt="Demo 1">
+</p>
+
+<p align="center">
+  <img src="docs/images/demo_2.png" width="800" alt="Demo 2">
+</p>
 
 
 ## 📄 Sample Output & Report Standards
