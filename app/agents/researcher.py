@@ -43,9 +43,13 @@ def summarize_node(state: dict) -> dict:
             notes[task["id"]] = "_No sources found for this question._"
             continue
         block = "\n\n".join(f"[{s['id']}] {s['title']}\n{s['content']}" for s in srcs)
-        notes[task["id"]] = chat(
-            SUMMARY_SYSTEM,
-            f"Question: {task['question']}\n\nSources:\n{block}",
-            max_tokens=1500,
-        )
+        try:
+            notes[task["id"]] = chat(
+                SUMMARY_SYSTEM,
+                f"Question: {task['question']}\n\nSources:\n{block}",
+                max_tokens=1500,
+            )
+        except Exception as exc:
+            # Fallback when LLM is unavailable
+            notes[task["id"]] = f"_Summary unavailable: {exc}_"
     return {"notes": notes, "stage": "summarising"}

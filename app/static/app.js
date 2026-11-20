@@ -7,6 +7,7 @@ const STEPS = [
   { key: "summarising",   label: "Summarising findings" },
   { key: "writing",       label: "Writing the report" },
   { key: "reviewing",     label: "Reviewing the draft" },
+  { key: "exporting",     label: "Exporting the report" },
   { key: "completed",     label: "Report generated" },
 ];
 
@@ -87,8 +88,10 @@ function pollProgress() {
       if (stage.startsWith("reviewed")) stage = "reviewing";
 
       setActiveStep(stage);
+      const elapsed = Math.max(0, job.stage_elapsed_seconds || 0);
+      const elapsedLabel = `${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, "0")}`;
       document.getElementById("status-message").textContent =
-        job.stage_label || stage;
+        `${job.stage_label || stage}${job.status === "running" ? ` (${elapsedLabel})` : ""}`;
 
       if (job.status === "completed") {
         clearInterval(pollTimer);

@@ -49,5 +49,8 @@ def writer_node(state: dict) -> dict:
         )
         revisions += 1
 
-    draft = chat(SYSTEM, prompt, max_tokens=6000)
+    try:
+        draft = chat(SYSTEM, prompt, max_tokens=6000)
+    except Exception as exc:
+        draft = f"# {state.get('title', 'Research Report')}\n\n_Draft unavailable: {exc}_"
     return {"draft": draft, "revisions": revisions, "stage": "writing"}

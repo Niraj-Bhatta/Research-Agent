@@ -104,6 +104,7 @@ Polls the execution state, current agent stage, review metrics, and the full rep
 * `summarising`: Synthesizing factual notes per question.
 * `writing`: Writer agent drafting the IEEE paper.
 * `reviewing`: Reviewer agent validating citations and structure.
+* `exporting`: Report artifacts being compiled.
 * `completed`: Research finished and artifacts compiled.
 * `failed`: Execution encountered an error.
 

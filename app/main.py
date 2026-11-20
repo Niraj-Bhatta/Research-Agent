@@ -1,6 +1,7 @@
 """FastAPI application – REST API + SSE for real-time progress + static UI."""
 
 import os
+import time
 import uuid
 from threading import Thread
 
@@ -9,7 +10,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from .graph import graph
+from .graph import graph, next_after_review
 
 app = FastAPI(
     title="AI Research Assistant",
@@ -30,9 +31,45 @@ STAGE_LABELS = {
     "summarising":    "Summarising findings…",
     "writing":        "Writing the report…",
     "reviewing":      "Reviewing the draft…",
+    "exporting":      "Exporting the report…",
     "completed":      "Report generated ✓",
     "failed":         "Something went wrong ✗",
 }
+
+NEXT_STAGES = {
+    "planner": "searching",
+    "researcher": "deduplicating",
+    "dedup": "summarising",
+    "summariser": "writing",
+    "writer": "reviewing",
+}
+
+STAGE_AGENTS = {
+    "planning": "planner",
+    "searching": "researcher",
+    "deduplicating": "dedup",
+    "summarising": "summariser",
+    "writing": "writer",
+    "reviewing": "reviewer",
+    "exporting": "export",
+}
+
+
+def _stage_after_node(node: str, state: dict) -> str:
+    if node == "reviewer":
+        return "writing" if next_after_review(state) == "writer" else "exporting"
+    return NEXT_STAGES.get(node, state.get("stage", node))
+
+
+def _job_status(job: dict) -> dict:
+    response = dict(job)
+    started_at = response.pop("stage_started_at", None)
+    response["stage_elapsed_seconds"] = (
+        int(time.monotonic() - started_at)
+        if started_at is not None and response["status"] == "running"
+        else 0
+    )
+    return response
 
 
 class ResearchRequest(BaseModel):
@@ -44,16 +81,24 @@ class ResearchRequest(BaseModel):
 # ---------------------------------------------------------------------------
 def _run_job(job_id: str, topic: str) -> None:
     job = JOBS[job_id]
-    job["status"] = "running"
+    job.update(
+        status="running",
+        stage="planning",
+        stage_label=STAGE_LABELS["planning"],
+        agent="planner",
+        stage_started_at=time.monotonic(),
+    )
     try:
         state: dict = {"job_id": job_id, "topic": topic}
         for update in graph.stream(state, stream_mode="updates"):
             for node, delta in update.items():
-                stage = delta.get("stage", node)
+                state.update(delta)
+                stage = _stage_after_node(node, state)
+                if stage != job["stage"]:
+                    job["stage_started_at"] = time.monotonic()
                 job["stage"] = stage
                 job["stage_label"] = STAGE_LABELS.get(stage, stage)
-                job["agent"] = node
-                state.update(delta)
+                job["agent"] = STAGE_AGENTS.get(stage, node)
         job.update(
             status="completed",
             stage="completed",
@@ -86,7 +131,6 @@ def health():
 
 
 @app.post("/api/research", status_code=202)
-@app.post("/research", status_code=202)
 def create_research(req: ResearchRequest):
     job_id = uuid.uuid4().hex[:12]
     JOBS[job_id] = {
@@ -106,16 +150,14 @@ def create_research(req: ResearchRequest):
 
 
 @app.get("/api/research/{job_id}")
-@app.get("/research/{job_id}")
 def get_research(job_id: str):
     job = JOBS.get(job_id)
     if not job:
         raise HTTPException(404, "Job not found")
-    return job
+    return _job_status(job)
 
 
 @app.get("/api/research/{job_id}/download/{fmt}")
-@app.get("/research/{job_id}/download/{fmt}")
 def download(job_id: str, fmt: str):
     job = JOBS.get(job_id)
     if not job:

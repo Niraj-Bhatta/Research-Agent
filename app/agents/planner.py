@@ -19,4 +19,7 @@ Provide exactly 2 search queries per task."""
 
 def planner_node(state: dict) -> dict:
     plan = chat_json(SYSTEM, f"Topic: {state['topic']}")
-    return {"title": plan["title"], "plan": plan["tasks"], "stage": "planning"}
+    tasks = plan.get("tasks") or []
+    if not tasks:
+        raise RuntimeError("Planner returned no tasks – LLM response was malformed.")
+    return {"title": plan.get("title", state["topic"]), "plan": tasks, "stage": "planning"}

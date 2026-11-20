@@ -14,14 +14,15 @@ Approve (true) only if score >= 8.  Keep issues specific and actionable."""
 
 
 def reviewer_node(state: dict) -> dict:
-    valid_ids = {s["id"] for s in state["sources"]}
-    cited_ids = {int(n) for n in re.findall(r"\[(\d+)\]", state["draft"])}
+    draft = state.get("draft") or ""
+    valid_ids = {s["id"] for s in state.get("sources", [])}
+    cited_ids = {int(n) for n in re.findall(r"\[(\d+)\]", draft)}
     invalid = sorted(cited_ids - valid_ids)
 
     prompt = (
         f"Valid source numbers: {sorted(valid_ids)}\n"
         f"Citation numbers used in draft: {sorted(cited_ids)}\n\n"
-        f"Draft:\n{state['draft']}"
+        f"Draft:\n{draft}"
     )
     review = chat_json(SYSTEM, prompt)
 

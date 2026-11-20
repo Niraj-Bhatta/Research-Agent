@@ -1,35 +1,37 @@
-"""LLM wrapper – talks to the Gemini OpenAI-compatible endpoint.
-
-One thin layer so every agent goes through the same retry / JSON-parse logic.
-"""
+"""LLM wrapper – talks to any OpenAI-compatible endpoint."""
 
 import json
 import re
 import time
 
-from openai import OpenAI, RateLimitError
+from openai import OpenAI, RateLimitError, APIStatusError
 
 from .config import settings
 
 _client: OpenAI | None = None
+_client_config: tuple[str, str] | None = None
 
 
 def _get_client() -> OpenAI:
-    global _client
-    if _client is None:
+    global _client, _client_config
+    current_config = (settings.base_url, settings.api_key)
+    if _client is None or _client_config != current_config:
         _client = OpenAI(
             api_key=settings.api_key or "none",
             base_url=settings.base_url,
-            timeout=60.0,
+            timeout=45.0,
+            max_retries=0,
         )
+        _client_config = current_config
     return _client
 
 
 def chat(system: str, user: str, max_tokens: int = 4096) -> str:
     """Send a system + user prompt and return the assistant reply as text."""
-    for attempt in range(6):
+    client = _get_client()
+    for attempt in range(3):
         try:
-            resp = _get_client().chat.completions.create(
+            resp = client.chat.completions.create(
                 model=settings.model,
                 max_tokens=max_tokens,
                 messages=[
@@ -38,11 +40,47 @@ def chat(system: str, user: str, max_tokens: int = 4096) -> str:
                 ],
             )
             return resp.choices[0].message.content or ""
-        except RateLimitError:
-            wait = 15 * (attempt + 1)
-            print(f"[rate-limited] waiting {wait}s  (attempt {attempt + 1}/6)")
-            time.sleep(wait)
-    raise RuntimeError("Rate limit kept failing – wait a minute or switch provider/model.")
+
+        except RateLimitError as exc:
+            # 429 – fail fast, don't retry
+            raise RuntimeError(
+                f"LLM rate-limited (429). Check API key quota for "
+                f"provider='{settings.provider}' model='{settings.model}'. "
+                f"Detail: {exc}"
+            ) from exc
+
+        except APIStatusError as exc:
+            status = exc.status_code
+            # Log full error body so we can see the exact reason
+            print(f"[llm] HTTP {status} from {settings.provider}/{settings.model}: {exc.message}")
+
+            if status in (400, 401, 403):
+                # 400 Bad Request, 401/403 Auth – never retryable
+                raise RuntimeError(
+                    f"LLM error {status} (not retryable). "
+                    f"provider='{settings.provider}' model='{settings.model}'. "
+                    f"Detail: {exc.message}"
+                ) from exc
+
+            # Transient 5xx – wait briefly then retry
+            if attempt < 2:
+                wait = 5 * (attempt + 1)
+                print(f"[llm] retrying in {wait}s (attempt {attempt + 1}/3)")
+                time.sleep(wait)
+            else:
+                raise RuntimeError(
+                    f"LLM server error {status} after 3 attempts: {exc.message}"
+                ) from exc
+
+        except Exception as exc:
+            if attempt < 2:
+                wait = 5 * (attempt + 1)
+                print(f"[llm] unexpected error, retrying in {wait}s: {exc}")
+                time.sleep(wait)
+            else:
+                raise
+
+    raise RuntimeError("LLM call failed after 3 attempts.")
 
 
 def chat_json(system: str, user: str, max_tokens: int = 2048, retries: int = 2) -> dict:

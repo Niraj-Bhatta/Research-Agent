@@ -34,11 +34,12 @@ class ResearchState(TypedDict, total=False):
 def export_node(state: ResearchState) -> dict:
     """Build the final report with an IEEE-style References section and export."""
     refs = "\n\n".join(
-        f"[{s['id']}] {s['title']}, {s['url']}" for s in state["sources"]
+        f"[{s['id']}] {s['title']}, {s['url']}" for s in state.get("sources", [])
     )
-    report = f"{state['draft'].rstrip()}\n\n## REFERENCES\n\n{refs}\n"
+    draft = (state.get("draft") or f"# {state.get('title', 'Research Report')}\n\n_No content generated._").rstrip()
+    report = f"{draft}\n\n## REFERENCES\n\n{refs}\n" if refs else draft
 
-    out_dir = os.path.join(settings.output_dir, state["job_id"])
+    out_dir = os.path.join(settings.output_dir, state.get("job_id", "default"))
     os.makedirs(out_dir, exist_ok=True)
     md_path = os.path.join(out_dir, "report.md")
     pdf_path = os.path.join(out_dir, "report.pdf")
@@ -55,9 +56,10 @@ def export_node(state: ResearchState) -> dict:
     }
 
 
-def _after_review(state: ResearchState) -> str:
+def next_after_review(state: ResearchState) -> str:
     """Feedback loop: re-write until approved or revision cap hit."""
-    if state["review"].get("approved") or state.get("revisions", 0) >= settings.max_revisions:
+    review = state.get("review") or {}
+    if review.get("approved") or state.get("revisions", 0) >= settings.max_revisions:
         return "export"
     return "writer"
 
@@ -80,7 +82,7 @@ def build_graph() -> StateGraph:
     g.add_edge("summariser", "writer")
     g.add_edge("writer", "reviewer")
     g.add_conditional_edges(
-        "reviewer", _after_review, {"writer": "writer", "export": "export"}
+        "reviewer", next_after_review, {"writer": "writer", "export": "export"}
     )
     g.add_edge("export", END)
 
