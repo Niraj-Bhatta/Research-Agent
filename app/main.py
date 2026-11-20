@@ -18,9 +18,7 @@ app = FastAPI(
     version="2.0.0",
 )
 
-# ---------------------------------------------------------------------------
-# In-memory job store (swap for Redis / DB in production)
-# ---------------------------------------------------------------------------
+
 JOBS: dict[str, dict] = {}
 
 # Stage descriptions shown in the UI
@@ -76,9 +74,7 @@ class ResearchRequest(BaseModel):
     topic: str = Field(..., min_length=3, examples=["Impact of AI on healthcare"])
 
 
-# ---------------------------------------------------------------------------
-# Background runner
-# ---------------------------------------------------------------------------
+
 def _run_job(job_id: str, topic: str) -> None:
     job = JOBS[job_id]
     job.update(
@@ -122,9 +118,7 @@ def _run_job(job_id: str, topic: str) -> None:
         )
 
 
-# ---------------------------------------------------------------------------
-# API routes
-# ---------------------------------------------------------------------------
+
 @app.get("/health")
 def health():
     return {"status": "ok"}
@@ -172,9 +166,7 @@ def download(job_id: str, fmt: str):
     return FileResponse(path, filename=f"report.{fmt}")
 
 
-# ---------------------------------------------------------------------------
-# Serve the frontend
-# ---------------------------------------------------------------------------
+
 _STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 
 

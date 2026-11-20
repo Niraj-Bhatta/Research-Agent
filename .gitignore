@@ -22,3 +22,9 @@ __pycache__/
 # OS
 .DS_Store
 Thumbs.db
+
+# Ignore all contents inside outputs
+outputs/*
+
+# Keep the IEEE test PDF visible
+!outputs/test_ieee.pdf
